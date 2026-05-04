@@ -1,8 +1,6 @@
 import customtkinter as ctk
 from tkinter import messagebox
 import vgamepad as vg
-import sys
-import time
 import keyboard  # New dependency for global hooks
 import json
 import os
@@ -376,14 +374,5 @@ class ControllerApp(ctk.CTk):
         for c in self.controllers: c.toggle_connection(force_state=connect)
 
 if __name__ == "__main__":
-    try:
-        import customtkinter
-        import vgamepad
-        import keyboard
-    except ImportError as e:
-        print(f"[ERROR] Missing library: {e}")
-        print("Please run: pip install customtkinter vgamepad keyboard")
-        sys.exit(1)
-
     app = ControllerApp()
     app.mainloop()
