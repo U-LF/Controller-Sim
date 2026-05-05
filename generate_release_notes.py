@@ -45,7 +45,7 @@ def generate_notes():
         'docs': "📝 Documentation"
     }
 
-    for timestamp, message in commits:
+    for _, message in commits:
         # Skip merge commits
         if message.startswith("Merge "):
             continue
@@ -56,17 +56,19 @@ def generate_notes():
             prefix = match.group(1).lower()
             clean_msg = match.group(3)
             category = mappings.get(prefix, "📦 Other")
-            categories[category].append(f"_{timestamp}_ - {clean_msg}")
+            categories[category].append(clean_msg)
         else:
-            categories["📦 Other"].append(f"_{timestamp}_ - {message}")
+            categories["📦 Other"].append(message)
 
-    # Build Markdown
-    release_body = f"## 📦 Release Notes ({datetime.datetime.now().strftime('%Y-%m-%d')})\n\n"
+    # Build Markdown (Simplified Option A)
+    now = datetime.datetime.now().strftime('%B %d, %Y')
+    release_body = f"## 📦 Release ({now})\n\n"
     
     for cat, items in categories.items():
         if items:
             release_body += f"### {cat}\n"
             for item in items:
+                # Remove duplicates in the same release (e.g. if user committed same thing twice)
                 release_body += f"- {item}\n"
             release_body += "\n"
 
