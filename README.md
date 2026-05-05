@@ -62,35 +62,17 @@ Ensure you have Python installed and added to your system PATH.
 
 ---
 
-## 🛠️ Building the Executable (.exe)
-
-If you want to package this application into a standalone Windows executable, use **PyInstaller**.
-
-### 1. Install PyInstaller
-```bash
-pip install pyinstaller
-```
-
-### 2. Run the Build Command
-Use the following command to bundle the script, GUI assets (`CustomTkinter`), and the gamepad drivers (`vgamepad` DLLs) into a single file:
-
-```bash
-pyinstaller --noconsole --onefile --collect-all customtkinter --collect-all vgamepad virtual_controller.py
-```
-
-### 3. Locate your EXE
-- Once finished, a new folder named **`dist/`** will be created.
-- Your standalone **`virtual_controller.exe`** will be inside it.
-- **Note:** The first time you launch the `.exe`, it may take 5–10 seconds to open while it extracts itself to a temporary folder. Subsequent launches are much faster.
-
----
-
 ## ⚠️ Troubleshooting
 
 - **Error: "Failed to connect controller":** This usually means the ViGEmBus driver is missing or not installed correctly. Re-run the ViGEmBus installer and restart your computer.
 - **Controller not showing in game:** Ensure the controller is "Connected" (Green button) before launching your game.
 - **GUI looks weird:** Ensure you have installed the `customtkinter` library via the requirements file.
 - **Key not registering:** Ensure you haven't bound the same key to multiple controllers, as the conflict detector will warn you but might prevent the binding if already in use.
+
+---
+
+## 🛠️ For Developers
+If you want to contribute, build the executable, or understand the CI/CD pipeline, please refer to the [**Developer Guide (DEVELOPER.md)**](DEVELOPER.md).
 
 ---
 
