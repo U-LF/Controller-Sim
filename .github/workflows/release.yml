@@ -35,6 +35,8 @@ jobs:
 
     - name: Generate Custom Release Notes
       run: python generate_release_notes.py
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     - name: Release
       uses: softprops/action-gh-release@v2

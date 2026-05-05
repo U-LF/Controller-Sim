@@ -56,10 +56,18 @@ This project includes a GitHub Actions workflow to automatically build and relea
    git push origin v1.0.0
    ```
 2. **Automatic Build & Documentation:** GitHub Actions will detect the tag, build the `.exe`, and create a new Release.
-   - **Intelligent Release Notes:** The project uses a custom `generate_release_notes.py` engine with Triple-Layer Filtering:
-     - **File-Aware:** Commits touching only infrastructure (`.github/`, `.githooks/`) or documentation (`README.md`, `DEVELOPER.md`) are automatically ignored.
-     - **Category-Based:** Only `feat:`, `fix:`, and `refactor:` prefixes are included.
-     - **Deep-Content Filtering:** Multi-part commit messages are split, and non-app segments (e.g., "updated readme") are stripped from the final output even if they share a commit with a feature.
+   - **AI-Powered Release Notes:** The project uses Google Gemini to analyze the actual code diffs and generate highly accurate summaries.
+     - **Setup:** You must add a `GEMINI_API_KEY` to your GitHub Repository Secrets.
+     - **Free Key:** Obtain a free API key from [Google AI Studio](https://aistudio.google.com/).
+     - **Fallback:** If the API key is missing or the AI fails, the system automatically falls back to the Triple-Layer Filtering logic described below.
+
+---
+
+## 🔬 AI Analysis & Filtering Logic
+The release notes engine is designed for maximum signal and zero noise:
+1. **AI Diff Analysis (Primary):** Gemini 1.5 Flash reads the raw `git diff` of `virtual_controller.py` and synthesizes user-facing changes into Features, Bug Fixes, and Refactors.
+2. **File-Aware (Fallback):** Commits touching only infrastructure (`.github/`, `.githooks/`) or documentation are ignored.
+3. **Deep-Content Filtering (Fallback):** Multi-part commit messages are split, and non-app segments are stripped.
 
 ---
 
