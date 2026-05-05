@@ -13,6 +13,7 @@ A modern Windows application to emulate virtual Xbox 360 and PS4 controllers usi
 - **Dynamic Management:** Add or remove as many controllers as you need.
 - **Independent Control:** Connect/Disconnect controllers individually.
 - **Legitimate Emulation:** Uses the ViGEmBus driver to ensure controllers show up in Device Manager and work with games/apps.
+- **Intelligent Automated Releases:** CI/CD pipeline that generates clean, user-centric release notes by filtering out internal development noise.
 - **Conflict Detection:** Built-in logic prevents accidental duplicate key bindings across different actions or controllers.
 
 ---

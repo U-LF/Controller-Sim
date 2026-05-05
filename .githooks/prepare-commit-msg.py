@@ -11,12 +11,13 @@ def categorize_message(msg):
     rules = [
         (r'\b(fix|resolv|bug|patch|issue|prevent|avoid|correct)', 'fix'),
         (r'\b(ci|workflow|github|action|yaml|yml|pipeline|devops)', 'ci'),
-        (r'\b(doc|readme|comment|manual|help|guide|wiki)', 'docs'),
+        (r'\b(doc|readme|comment|manual|help|guide|wiki|developer|markdown|\.md)', 'docs'),
         (r'\b(add|new|implement|allow|creat|feat|introduct|provid)', 'feat'),
-        (r'\b(refactor|clean|simplif|organiz|struct|renam|improv|polish|updat|adjust|modif)', 'refactor'),
         (r'\b(test|unit|pyt|check|verify|validat)', 'test'),
         (r'\b(style|format|lint|prettier|css|ui|ux)', 'style'),
         (r'\b(build|version|bump|pkg|packag|dist|release)', 'build'),
+        (r'\b(refactor|clean|simplif|organiz|struct|renam|improv|polish|adjust|modif)', 'refactor'),
+        (r'\b(updat|chang|sync)', 'chore'),
     ]
 
     for pattern, prefix in rules:
