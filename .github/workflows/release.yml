@@ -21,7 +21,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12.9'
         cache: 'pip'
 
     - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --noconsole --onefile --name virtual_controller_manager --collect-all customtkinter virtual_controller.py
+        pyinstaller --noconsole --onefile --name virtual_controller_manager --collect-all customtkinter --collect-all vgamepad virtual_controller.py
 
     - name: Generate Custom Release Notes
       run: python scripts/generate_release_notes.py
