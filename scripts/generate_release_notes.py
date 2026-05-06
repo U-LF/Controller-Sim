@@ -94,12 +94,12 @@ def generate_ai_notes(diff, commit_summary, api_key):
         print("[INFO] No changes found to summarize. Skipping AI.")
         return None
         
-    # Attempt with Retry logic for 429 errors
+    # Attempt with Retry logic for transient errors
     for attempt in range(2):
         try:
             if attempt > 0:
                 print(f"[INFO] Retrying AI synthesis (Attempt {attempt + 1})...")
-                time.sleep(5) # Wait for quota reset
+                time.sleep(10) # Longer wait for quota reset
 
             print("[INFO] Contacting Google Gemini API for synthesis...")
             client = genai.Client(api_key=api_key)
@@ -108,7 +108,7 @@ def generate_ai_notes(diff, commit_summary, api_key):
             
             INPUT DATA:
             1. GIT DIFF (The truth of what changed):
-            {diff[:15000]}
+            {diff[:5000]} # Reduced payload for stability
             
             2. COMMIT MESSAGES (The developer's stated intent):
             {commit_summary}
@@ -121,15 +121,15 @@ def generate_ai_notes(diff, commit_summary, api_key):
             - Format as a clean Markdown list.
             - Return ONLY the categories and bullets. No intro or outro.
             """
-            # Use 1.5-flash for maximum free-tier stability
+            # Use gemini-flash-latest as discovered in list_models
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-flash-latest',
                 contents=prompt
             )
             return response.text.strip()
         except Exception as e:
-            if "429" in str(e) and attempt == 0:
-                print("[WARNING] Rate limit hit. Waiting to retry...")
+            if ("429" in str(e) or "404" in str(e)) and attempt == 0:
+                print(f"[WARNING] API encountered an issue ({e}). Waiting to retry...")
                 continue
             print(f"[ERROR] Gemini API call failed: {e}")
             break
