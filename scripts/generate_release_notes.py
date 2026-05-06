@@ -84,6 +84,8 @@ def get_processed_commits(since_tag):
     
     return processed_data
 
+import time
+
 def generate_ai_notes(diff, commit_summary, api_key):
     if not api_key:
         print("[INFO] No GEMINI_API_KEY found. Skipping AI generation.")
@@ -92,35 +94,46 @@ def generate_ai_notes(diff, commit_summary, api_key):
         print("[INFO] No changes found to summarize. Skipping AI.")
         return None
         
-    try:
-        print("[INFO] Contacting Google Gemini API for synthesis...")
-        client = genai.Client(api_key=api_key)
-        prompt = f"""
-        You are a senior developer. Generate professional, high-signal release notes for the "Virtual Controller Manager".
-        
-        INPUT DATA:
-        1. GIT DIFF (The truth of what changed):
-        {diff[:15000]}
-        
-        2. COMMIT MESSAGES (The developer's stated intent):
-        {commit_summary}
-        
-        RULES:
-        - Use these exact categories: 🚀 Features, 🐞 Bug Fixes, 🛠️ Refactors.
-        - Focus ONLY on user-facing application logic.
-        - Analyze the code diffs to explain "how" things were improved.
-        - Strip all mentions of CI/CD, Documentation, or internal build scripts.
-        - Format as a clean Markdown list.
-        - Return ONLY the categories and bullets. No intro or outro.
-        """
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt
-        )
-        return response.text.strip()
-    except Exception as e:
-        print(f"[ERROR] Gemini API call failed: {e}")
-        return None
+    # Attempt with Retry logic for 429 errors
+    for attempt in range(2):
+        try:
+            if attempt > 0:
+                print(f"[INFO] Retrying AI synthesis (Attempt {attempt + 1})...")
+                time.sleep(5) # Wait for quota reset
+
+            print("[INFO] Contacting Google Gemini API for synthesis...")
+            client = genai.Client(api_key=api_key)
+            prompt = f"""
+            You are a senior developer. Generate professional, high-signal release notes for the "Virtual Controller Manager".
+            
+            INPUT DATA:
+            1. GIT DIFF (The truth of what changed):
+            {diff[:15000]}
+            
+            2. COMMIT MESSAGES (The developer's stated intent):
+            {commit_summary}
+            
+            RULES:
+            - Use these exact categories: 🚀 Features, 🐞 Bug Fixes, 🛠️ Refactors.
+            - Focus ONLY on user-facing application logic.
+            - Analyze the code diffs to explain "how" things were improved.
+            - Strip all mentions of CI/CD, Documentation, or internal build scripts.
+            - Format as a clean Markdown list.
+            - Return ONLY the categories and bullets. No intro or outro.
+            """
+            # Use 1.5-flash for maximum free-tier stability
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
+            return response.text.strip()
+        except Exception as e:
+            if "429" in str(e) and attempt == 0:
+                print("[WARNING] Rate limit hit. Waiting to retry...")
+                continue
+            print(f"[ERROR] Gemini API call failed: {e}")
+            break
+    return None
 
 def generate_notes():
     last_tag = get_last_tag()
