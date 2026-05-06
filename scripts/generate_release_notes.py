@@ -2,7 +2,7 @@ import subprocess
 import datetime
 import re
 import os
-import google.generativeai as genai
+from google import genai
 
 # --- CONFIGURATION ---
 NOISE_DIRS = ['.github/', '.githooks/', 'scripts/', '__pycache__/', 'build/', 'dist/']
@@ -22,6 +22,7 @@ NOISE_KEYWORDS = ['ci', 'workflow', 'github', 'action', 'pipeline', 'devops', 'd
 
 def get_last_tag():
     try:
+        # We look for the latest tag reachable from the parent of the current commit.
         return subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0', 'HEAD^'], stderr=subprocess.STDOUT).decode().strip()
     except subprocess.CalledProcessError:
         return None
@@ -65,34 +66,35 @@ def get_processed_commits(since_tag):
         files = lines[1:] if len(lines) > 1 else []
         msg = header.split('|')[1]
         
-        # Layer 1: Conventional Match
         match = re.match(r'^(\w+)(\(.*\))?!?: (.*)$', msg)
-        
-        # Layer 2: File Relevance
         is_app_relevant = any(not (any(f.startswith(d) for d in NOISE_DIRS) or (f in NOISE_FILES)) for f in files)
 
         if match:
             prefix, body = match.group(1).lower(), match.group(3)
             cat = MAPPINGS.get(prefix)
-            # If it's a Feat or Fix, keep it regardless of files (it's a milestone)
-            # Otherwise, only keep if it touched app files
             if (prefix in ['feat', 'fix']) or (cat and is_app_relevant):
                 for part in re.split(r'[,;\n]', body):
                     part = part.strip()
                     if not part: continue
-                    if any(kw in part.lower() for kw in APP_KEYWORDS) or not any(kw in part.lower() for kw in NOISE_KEYWORDS):
+                    lower_part = part.lower()
+                    if any(kw in lower_part for kw in APP_KEYWORDS) or not any(kw in lower_part for kw in NOISE_KEYWORDS):
                         processed_data[cat].append(part)
         elif is_app_relevant:
-            # Fallback for commits without prefixes that touch code
             processed_data["📦 Other Updates"].append(msg)
     
     return processed_data
 
 def generate_ai_notes(diff, commit_summary, api_key):
-    if not api_key or (not diff and not commit_summary): return None
+    if not api_key:
+        print("[INFO] No GEMINI_API_KEY found. Skipping AI generation.")
+        return None
+    if not diff and not commit_summary:
+        print("[INFO] No changes found to summarize. Skipping AI.")
+        return None
+        
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        print("[INFO] Contacting Google Gemini API for synthesis...")
+        client = genai.Client(api_key=api_key)
         prompt = f"""
         You are a senior developer. Generate professional, high-signal release notes for the "Virtual Controller Manager".
         
@@ -106,19 +108,25 @@ def generate_ai_notes(diff, commit_summary, api_key):
         RULES:
         - Use these exact categories: 🚀 Features, 🐞 Bug Fixes, 🛠️ Refactors.
         - Focus ONLY on user-facing application logic.
-        - Analyze the code diffs to explain "how" things were improved (e.g., "Updated safety checks to be more lenient...").
+        - Analyze the code diffs to explain "how" things were improved.
         - Strip all mentions of CI/CD, Documentation, or internal build scripts.
         - Format as a clean Markdown list.
         - Return ONLY the categories and bullets. No intro or outro.
         """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
         return response.text.strip()
-    except:
+    except Exception as e:
+        print(f"[ERROR] Gemini API call failed: {e}")
         return None
 
 def generate_notes():
     last_tag = get_last_tag()
     api_key = os.getenv("GEMINI_API_KEY")
+    
+    print(f"[INFO] Analyzing repository state since: {last_tag if last_tag else 'beginning'}")
     
     # Pre-process commit data
     commits_data = get_processed_commits(last_tag)
@@ -135,9 +143,10 @@ def generate_notes():
     ai_body = generate_ai_notes(diff, commit_summary, api_key)
     
     if ai_body and ("🚀" in ai_body or "###" in ai_body):
+        print("[SUCCESS] Release notes synthesized by Gemini 2.0.")
         body = ai_body
     else:
-        # Robust Rule-Based Fallback (Option A style)
+        print("[INFO] Falling back to rule-based filtering logic.")
         body = ""
         for cat, items in commits_data.items():
             if items:
@@ -159,4 +168,4 @@ if __name__ == "__main__":
     notes = generate_notes()
     with open("RELEASE_NOTES.md", "w", encoding="utf-8") as f:
         f.write(notes)
-    print("Release notes saved to RELEASE_NOTES.md")
+    print("[INFO] Final release notes written to RELEASE_NOTES.md")

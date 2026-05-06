@@ -1,4 +1,4 @@
 customtkinter
 vgamepad
 keyboard
-google-generativeai
+google-genai
